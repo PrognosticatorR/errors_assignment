@@ -13,13 +13,9 @@ contract Ballot {
         bytes32 name;
         uint voteCounts;
     }
-
     address public chairPerson;
-
     mapping(address => Voter) voters;
-
     Proposal[] public proposals;
-
     uint private winningProposal;
     bool public winnerDecalred = false;
 
@@ -48,8 +44,8 @@ contract Ballot {
 
     function delegate(address to) external {
         Voter storage sender = voters[msg.sender];
-        assert(sender.alreadyVoted == false);
-        require(to != msg.sender, "Self-delegation is not allowed.");
+        require(sender.alreadyVoted == false);
+        assert(to != msg.sender);
 
         while (voters[to].delegate != address(0)) {
             to = voters[to].delegate;
@@ -78,7 +74,7 @@ contract Ballot {
         sender.alreadyVoted = true;
         sender.vote = proposal;
         if (proposal < proposals.length) {
-            revert OutOfBoundAccessError()
+            revert OutOfBoundAccessError();
         }
         proposals[proposal].voteCounts += sender.weight;
         if (winningProposal == 0) {
