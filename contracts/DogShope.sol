@@ -1,64 +1,40 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.9;
+pragma solidity ^0.8.17;
 
-contract DogShope {
-    enum Breeds {
-        GoldenRetriever,
-        Bulldog,
-        GermanShepherd,
-        SiberianHusky,
-        BorderCollie,
-        Poodle,
-        LabradorRetriever
-    }
-    mapping(Breeds => uint) public costOfOwnership;
-    address public shopOwner;
-    error BreedIsNotInShopeError();
-    struct Dog {
-        string name;
-        Breeds breed;
-    }
-    mapping(address => Dog) ownerOf;
+contract BankAccount {
+    uint public balance;
+    uint public constant MAX_UINT = 2 ** 256 - 1;
+    error BalanceUnderFlow();
+
+    address public accountHolder;
 
     constructor() {
-        shopOwner = msg.sender;
+        accountHolder = msg.sender;
     }
 
-    modifier onlyOwner() {
-        require(msg.sender == shopOwner, "Only oiwner can sale the shop!");
-        _;
+    function depositToAccount(uint _amount) public {
+        uint prevBalance = balance;
+        uint newBalance = balance + _amount;
+        require(newBalance >= prevBalance, "Overflow");
+        balance = newBalance;
+        assert(balance >= prevBalance);
     }
 
-    function setOwner(address newOwner) public onlyOwner {
-        shopOwner = newOwner;
-    }
-
-    function getBreedValueByKey(string memory breed) internal pure returns (Breeds) {
-        if (keccak256(abi.encodePacked(breed)) == keccak256("GoldenRetriever")) return Breeds.GoldenRetriever;
-        if (keccak256(abi.encodePacked(breed)) == keccak256("Bulldog")) return Breeds.Bulldog;
-        if (keccak256(abi.encodePacked(breed)) == keccak256("GermanShepherd")) return Breeds.GermanShepherd;
-        if (keccak256(abi.encodePacked(breed)) == keccak256("SiberianHusky")) return Breeds.SiberianHusky;
-        if (keccak256(abi.encodePacked(breed)) == keccak256("BorderCollie")) return Breeds.BorderCollie;
-        if (keccak256(abi.encodePacked(breed)) == keccak256("Poodle")) return Breeds.Poodle;
-        if (keccak256(abi.encodePacked(breed)) == keccak256("LabradorRetriever")) return Breeds.LabradorRetriever;
-        revert BreedIsNotInShopeError();
-    }
-
-    function setCost(string memory breed, uint price) external {
-        assert(shopOwner == msg.sender);
-        costOfOwnership[getBreedValueByKey(breed)] = price;
-    }
-
-    function ownADog(string memory name, string memory breed) public payable {
-        require(costOfOwnership[getBreedValueByKey(breed)] <= msg.value, "Need to pay more to own a dog!");
-        bool sent = payable(address(this)).send(msg.value);
-        if (sent == false) {
-            revert("failure while sending eth");
+    function withdrawFromAccount(uint _amount) public {
+        uint prevBalance = balance;
+        require(balance >= _amount, "Balance Underflow");
+        if (balance < _amount) {
+            revert BalanceUnderFlow();
         }
-        ownerOf[msg.sender] = Dog(name, getBreedValueByKey(breed));
+        balance -= _amount;
+        assert(balance <= prevBalance);
     }
 
-    function getBreedByOwner(address owner) external view returns (Dog memory) {
-        return ownerOf[owner];
+    function closeAccountPermanently() external returns (bool success) {
+        require(msg.sender == accountHolder, "Only holder can take this action");
+        balance = 0;
+        assert(balance == 0);
+        accountHolder = address(0);
+        return true;
     }
 }
