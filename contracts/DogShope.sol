@@ -13,7 +13,7 @@ contract DogShope {
     }
     mapping(Breeds => uint) public costOfOwnership;
     address public shopOwner;
-
+    error BreedIsNotInShopeError();
     struct Dog {
         string name;
         Breeds breed;
@@ -41,7 +41,7 @@ contract DogShope {
         if (keccak256(abi.encodePacked(breed)) == keccak256("BorderCollie")) return Breeds.BorderCollie;
         if (keccak256(abi.encodePacked(breed)) == keccak256("Poodle")) return Breeds.Poodle;
         if (keccak256(abi.encodePacked(breed)) == keccak256("LabradorRetriever")) return Breeds.LabradorRetriever;
-        revert("Breed is not available in the shop!");
+        revert BreedIsNotInShopeError();
     }
 
     function setCost(string memory breed, uint price) external {
